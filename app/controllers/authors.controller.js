@@ -30,7 +30,7 @@ exports.createAuthor = (req, res) => {
   // Save Authors in the database
   Author.createAuthor(authors, (err, data) => {
     if (err) res.status(500).send({ message: err.message || "Some error occurred while creating the Author." });
-    else res.send(data);
+    else res.status(201).send(data);
   });
 };
 
@@ -51,8 +51,13 @@ exports.getAllAuthors = (req, res) => {
   }
 
   Author.getAllAuthors(params, (err, data) => {
-    if (err) res.status(500).send({ message: err.message || "Some error occurred while retrieving authors." });
-    else res.send(data);
+    if (err) {
+      res.status(500).send({ message: err.message || "Some error occurred while retrieving authors." });
+    } else if (data.message) {
+      res.status(404).send(data);
+    } else {
+      res.status(200).send(data);
+    }
   });
 };
 

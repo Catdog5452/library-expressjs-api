@@ -21,8 +21,25 @@ Author.createAuthor = (newAuthors, result) => {
       return;
     }
 
-    console.log("Created author(s): ", newAuthors);
-    result(null, newAuthors);
+    console.log(res.insertId);
+
+    let firstId = res.insertId;
+
+    const authors = [];
+
+    for (let i = 0; i < newAuthors.length; i++) {
+      authors.push({
+        id: firstId,
+        first_name: newAuthors[i].first_name,
+        last_name: newAuthors[i].last_name,
+        birth_date: newAuthors[i].birth_date
+      });
+
+      firstId++;
+    }
+
+    console.log("Created author(s): ", authors);
+    result(null, authors);
   });
 };
 
