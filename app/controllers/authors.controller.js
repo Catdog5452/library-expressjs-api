@@ -3,12 +3,22 @@ const Author = require("../models/authors.model.js");
 // Create and Save a new Author
 exports.createAuthor = (req, res) => {
   // Validate request
-  if (!req.body) {
+  if (Array.isArray(req.body)) {
+    for (let i = 0; i < req.body.length; i++) {
+      if (!req.body[i] || Object.keys(req.body[i]).length === 0) {
+        res.status(400).send({ message: "Content cannot be empty!" });
+        return;
+      }
+    }
+  }
+
+  if (!req.body || Object.keys(req.body).length === 0) {
     res.status(400).send({ message: "Content cannot be empty!" });
     return;
   }
 
   let authors = [];
+
   if (Array.isArray(req.body)) {
     // If the request body is an array, handle each object separately
     authors = req.body.map(authorData => ({
@@ -25,17 +35,27 @@ exports.createAuthor = (req, res) => {
     });
   }
 
-  console.log(authors);
+  // validate that each author has a first_name, last_name, and birth_date
+  for (let i = 0; i < authors.length; i++) {
+    if (!authors[i].first_name || !authors[i].last_name || !authors[i].birth_date) {
+      res.status(400).send({ message: "First Name, Last Name, and Birth Date are required!" });
+      return;
+    }
+  }
 
   // Save Authors in the database
   Author.createAuthor(authors, (err, data) => {
-    if (err) res.status(500).send({ message: err.message || "Some error occurred while creating the Author." });
-    else res.status(201).send(data);
+    if (err) {
+      res.status(500).send({ message: err.message || "Some error occurred while creating the Author." });
+    } else {
+      res.status(201).send(data);
+    }
   });
 };
 
 // Retrieve all Authors from the database.
 exports.getAllAuthors = (req, res) => {
+  // If there are query parameters, use them to filter the results
   let params = "";
 
   if (req.query.first_name) {
@@ -53,8 +73,8 @@ exports.getAllAuthors = (req, res) => {
   Author.getAllAuthors(params, (err, data) => {
     if (err) {
       res.status(500).send({ message: err.message || "Some error occurred while retrieving authors." });
-    } else if (data.message) {
-      res.status(404).send(data);
+    } else if (data.error === "not_found") {
+      res.status(404).send({ message: "No authors found." });
     } else {
       res.status(200).send(data);
     }
@@ -63,6 +83,7 @@ exports.getAllAuthors = (req, res) => {
 
 // Find a single Author with an id
 exports.getAuthorById = (req, res) => {
+  // Validate Request
   const id = req.params.id;
 
   if (!id) {
@@ -72,16 +93,24 @@ exports.getAuthorById = (req, res) => {
 
   Author.getAuthorById(id, (err, data) => {
     if (err) {
-      if (err.kind === "not_found") res.status(404).send({ message: `Not found Author with id ${req.params.authorId}.` });
-      else res.status(500).send({ message: "Error retrieving Author with id " + req.params.authorId });
-    } else res.send(data);
+      res.status(500).send({ message: "Error retrieving Author with id " + req.params.id });
+    } else if (data.error === "not_found") {
+      res.status(404).send({ message: `Author with ID ${id} not found.` });
+    } else {
+      res.status(200).send(data);
+    }
   });
 };
 
 // Update a Author identified by the authorId in the request
 exports.updateAuthorById = (req, res) => {
   // Validate Request
-  if (!req.body) {
+  if (Array.isArray(req.body)) {
+    res.status(400).send({ message: "Invalid request! Cannot update from an array!" });
+    return;
+  }
+
+  if (!req.body || Object.keys(req.body).length === 0) {
     res.status(400).send({ message: "Content cannot be empty!" });
     return;
   }
@@ -99,15 +128,24 @@ exports.updateAuthorById = (req, res) => {
     birth_date: req.body.birth_date,
   });
 
+  if (!author.first_name || !author.last_name || !author.birth_date) {
+    res.status(400).send({ message: "First Name, Last Name, and Birth Date are required!" });
+    return;
+  }
+
   Author.updateAuthorById(id, author, (err, data) => {
+
     if (err) {
       if (err.kind === "not_found") {
-        res.status(404).send({ message: `Not found Author with id ${req.params.authorId}.` });
+        res.status(404).send({ message: `Author with ID ${id} not found.` });
       } else {
-        res.status(500).send({ message: "Error updating Author with id " + req.params.authorId });
+        res.status(500).send({ message: "Error updating Author with id " + id });
       }
+    } else if (data.error == "not_found") {
+      res.status(404).send({ message: `Author with ID ${id} not found.` });
+
     } else {
-      res.status(201).send({ message: "Author was updated successfully!", author: author });
+      res.status(201).send({ message: "Author was updated successfully!", author: data.author });
     }
   });
 };
@@ -123,11 +161,9 @@ exports.deleteAuthorById = (req, res) => {
 
   Author.deleteAuthorById(id, (err, data) => {
     if (err) {
-      if (err.kind === "not_found") {
-        res.status(404).send({ message: `Not found Author with id ${id}.` });
-      } else {
-        res.status(500).send({ message: "Could not delete Author with id " + id });
-      }
+      res.status(500).send({ message: "Could not delete Author with id " + id });
+    } else if (data.error == "not_found") {
+      res.status(404).send({ message: `Not found Author with id ${id}.` });
     } else {
       res.status(200).send({ message: `Author with id: ${id} was deleted successfully!` });
     }

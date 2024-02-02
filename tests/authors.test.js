@@ -120,7 +120,29 @@ describe("POST /authors/create", () => {
   });
 });
 
-// Test the GET /authors/:id route
+// Test the GET /authors/create route with no request body
+describe("POST /authors/create", () => {
+  it("should return an error message", async () => {
+    const res = await request(app).post("/authors/create");
+
+    expect(res.statusCode).toBe(400);
+
+    expect(res.body.message).toBe("Content cannot be empty!");
+  });
+});
+
+// Test the GET /authors/create route with an invalid body request
+describe("POST /authors/create", () => {
+  it("should return an error message", async () => {
+    const res = await request(app).post("/authors/create").send({ first_name: "Jane", last_name: "Doe" });
+
+    expect(res.statusCode).toBe(400);
+
+    expect(res.body.message).toBe("First Name, Last Name, and Birth Date are required!");
+  });
+});
+
+// Test the PUT /authors/:id route
 describe("PUT /authors/:id", () => {
   it("should update a single author", async () => {
     const date = generateRandomDate(new Date(1900, 0, 1), new Date());
@@ -133,16 +155,68 @@ describe("PUT /authors/:id", () => {
 
     expect(res.statusCode).toBe(201);
 
-    console.log(res.body);
-
-    //expect(res.body.author.id).toBe(28);
+    expect(res.body.author.id).toBe("29");
     expect(res.body.author.first_name).toBe("John");
     expect(res.body.author.last_name).toBe("Smith");
     expect(res.body.author.birth_date).toBe(date.toISOString());
   });
 });
 
-// Test the GET /authors/:id route
+// Test the PUT /authors/:id route with invalid id
+describe("PUT /authors/:id", () => {
+  it("should return an error message", async () => {
+    const res = await request(app).put("/authors/0").send({
+      first_name: "John",
+      last_name: "Smith",
+      birth_date: "1993-02-16T11:00:00.000Z"
+    });
+
+    expect(res.statusCode).toBe(404);
+
+    expect(res.body.message).toBe("Author with ID 0 not found.");
+  });
+});
+
+// Test the PUT /authors/:id route with no request body
+describe("PUT /authors/:id", () => {
+  it("should return an error message", async () => {
+    const res = await request(app).put("/authors/29");
+
+    expect(res.statusCode).toBe(400);
+
+    expect(res.body.message).toBe("Content cannot be empty!");
+  });
+});
+
+// Test the PUT /authors/:id route with an array request body
+describe("PUT /authors/:id", () => {
+  it("should return an error message", async () => {
+    const res = await request(app).put("/authors/29").send([
+      {
+        first_name: "John",
+        last_name: "Smith",
+        birth_date: "1993-02-16T11:00:00.000Z"
+      }
+    ]);
+
+    expect(res.statusCode).toBe(400);
+
+    expect(res.body.message).toBe("Invalid request! Cannot update from an array!");
+  });
+});
+
+// Test the PUT /authors/:id route with an invalid body request
+describe("PUT /authors/:id", () => {
+  it("should return an error message", async () => {
+    const res = await request(app).put("/authors/29").send({ first_name: "John" });
+
+    expect(res.statusCode).toBe(400);
+
+    expect(res.body.message).toBe("First Name, Last Name, and Birth Date are required!");
+  });
+});
+
+// Test the DELETE /authors/:id route with valid id
 describe("DELETE /authors/:id", () => {
   it("should delete a single author", async () => {
     const res = await request(app).delete("/authors/" + newAuthorId);
@@ -153,6 +227,29 @@ describe("DELETE /authors/:id", () => {
 
   });
 });
+
+// Test the DELETE /authors/:id route with invalid id
+describe("DELETE /authors/:id", () => {
+  it("should return an error message", async () => {
+    const res = await request(app).delete("/authors/0");
+
+    expect(res.statusCode).toBe(404);
+
+    expect(res.body.message).toBe("Not found Author with id 0.");
+  });
+});
+
+// Test the DELETE /authors route
+// I don't actually want to test this at this point
+// describe("DELETE /authors", () => {
+//   it("should delete all authors", async () => {
+//     const res = await request(app).delete("/authors");
+
+//     expect(res.statusCode).toBe(200);
+
+//     expect(res.body.message).toBe("All authors were deleted successfully!");
+//   });
+// });
 
 /**
  * Generates a random date between two dates.

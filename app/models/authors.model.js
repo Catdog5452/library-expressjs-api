@@ -21,10 +21,10 @@ Author.createAuthor = (newAuthors, result) => {
       return;
     }
 
-    console.log(res.insertId);
-
+    // This will be deleted later in the test suite
     let firstId = res.insertId;
 
+    // Get the authors that were just created with their IDs
     const authors = [];
 
     for (let i = 0; i < newAuthors.length; i++) {
@@ -54,7 +54,7 @@ Author.getAllAuthors = (params, result) => {
 
     if (res.length === 0) {
       console.log("No authors found.");
-      result(null, { message: "No authors found." });
+      result(null, { error: "not_found" });
       return;
     }
 
@@ -73,8 +73,8 @@ Author.getAuthorById = (authorId, result) => {
     }
 
     if (res.length === 0) {
-      console.log(`Author with ID ${authorId} not found.`);
-      result(null, { message: `Author with ID ${authorId} not found.` });
+      console.log(`Model: Author with ID ${authorId} not found.`);
+      result(null, { error: "not_found" });
       return;
     }
 
@@ -97,12 +97,14 @@ Author.updateAuthorById = (authorId, author, result) => {
 
       if (res.affectedRows === 0) {
         console.log(`Author with ID ${authorId} not found.`);
-        result(null, { message: `Author with ID ${authorId} not found.` });
+        result(null, { error: "not_found" });
         return;
       }
 
-      console.log("Updated author: ", { id: authorId, ...author });
-      result(null, { id: authorId, ...author });
+      const updatedAuthor = { id: authorId, ...author };
+
+      console.log("Updated author: ", { author: updatedAuthor });
+      result(null, { author: updatedAuthor });
     }
   );
 };
@@ -118,7 +120,7 @@ Author.deleteAuthorById = (authorId, result) => {
 
     if (res.affectedRows === 0) {
       console.log(`Author with ID ${authorId} not found.`);
-      result(null, { message: `Author with ID ${authorId} not found.` });
+      result(null, { error: "not_found" });
       return;
     }
 
