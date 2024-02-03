@@ -38,7 +38,7 @@ Author.createAuthor = (newAuthors, result) => {
       firstId++;
     }
 
-    console.log("Created author(s): ", authors);
+    console.log("Created author(s)");
     result(null, authors);
   });
 };
@@ -58,7 +58,7 @@ Author.getAllAuthors = (params, result) => {
       return;
     }
 
-    console.log("Authors: ", res);
+    console.log("Retrieved all authors");
     result(null, res);
   });
 };
@@ -78,7 +78,7 @@ Author.getAuthorById = (authorId, result) => {
       return;
     }
 
-    console.log("Author: ", res[0]);
+    console.log("Retrieved author by ID");
     result(null, res[0]);
   });
 };
@@ -103,7 +103,7 @@ Author.updateAuthorById = (authorId, author, result) => {
 
       const updatedAuthor = { id: authorId, ...author };
 
-      console.log("Updated author: ", { author: updatedAuthor });
+      console.log(`Updated author with id=${authorId}`);
       result(null, { author: updatedAuthor });
     }
   );
@@ -124,7 +124,7 @@ Author.deleteAuthorById = (authorId, result) => {
       return;
     }
 
-    console.log(`Deleted author with ID ${authorId}.`);
+    console.log(`Deleted author with id=${authorId}.`);
     result(null, res);
   });
 };

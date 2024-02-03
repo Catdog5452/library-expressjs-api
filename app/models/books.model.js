@@ -21,8 +21,21 @@ Book.createBook = (newBooks, result) => {
       return;
     }
 
-    console.log("Created book(s): ", newBooks);
-    result(null, newBooks);
+    let firstId = res.insertId;
+    let books = [];
+    for (let i = 0; i < newBooks.length; i++) {
+      books.push({
+        id: firstId,
+        title: newBooks[i].title,
+        author_id: newBooks[i].author_id,
+        publish_date: newBooks[i].publish_date
+      });
+
+      firstId++;
+    }
+
+    console.log("Created book(s): ", books);
+    result(null, books);
   });
 };
 
@@ -52,7 +65,7 @@ Book.getAllBooks = (params, result) => {
 
     if (res.length === 0) {
       console.log("No books found.");
-      result(null, { message: "No books found." });
+      result(null, { error: "not_found" });
       return;
     }
 
@@ -72,7 +85,7 @@ Book.getBookById = (bookId, result) => {
 
     if (res.length === 0) {
       console.log(`Book with ID ${bookId} not found.`);
-      result(null, { message: `Book with ID ${bookId} not found.` });
+      result(null, { error: "not_found" });
       return;
     }
 
@@ -94,13 +107,15 @@ Book.updateBookById = (bookId, book, result) => {
       }
 
       if (res.affectedRows === 0) {
-        console.log(`Book with ID ${bookId} not found.`);
-        result(null, { message: `Book with ID ${bookId} not found.` });
+        console.log(`Book with id=${bookId} not found.`);
+        result(null, { error: "not_found" });
         return;
       }
 
-      console.log("Updated book: ", { id: bookId, ...book });
-      result(null, { id: bookId, ...book });
+      const updatedBook = { id: bookId, ...book };
+
+      console.log(`Book with id=${bookId} successfully updated!`);
+      result(null, { book: updatedBook });
     }
   );
 };
@@ -116,7 +131,7 @@ Book.deleteBookById = (bookId, result) => {
 
     if (res.affectedRows === 0) {
       console.log(`Book with ID ${bookId} not found.`);
-      result(null, { message: `Book with ID ${bookId} not found.` });
+      result(null, { error: "not_found" });
       return;
     }
 

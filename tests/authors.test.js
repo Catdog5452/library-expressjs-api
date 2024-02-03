@@ -67,7 +67,7 @@ describe("GET /authors/:id", () => {
 
     expect(res.statusCode).toBe(404);
 
-    expect(res.body.message).toBe("Author with ID 0 not found.");
+    expect(res.body.message).toBe("Author with id=0 not found.");
   });
 });
 

@@ -46,16 +46,22 @@ exports.createBook = (req, res) => {
   const authorIds = books.map(book => book.author_id);
 
   Book.validateAuthorIds(authorIds, (err, data) => {
-    if (err) res.status(500).send({ message: err.message || "Some error occurred while validating the Author IDs." });
-    else if (data.length !== authorIds.length) res.status(400).send({ message: "Some Author IDs do not exist in the database." });
+    if (err) {
+      res.status(500).send({ message: err.message || "Some error occurred while validating the Author IDs." });
+      return;
+    } else if (data.length !== authorIds.length) {
+      res.status(400).send({ message: "At least one author_id does not exist in the database." });
+      return;
+    }
   });
-
-  console.log(books);
 
   // Save Books in the database
   Book.createBook(books, (err, data) => {
-    if (err) res.status(500).send({ message: err.message || "Some error occurred while creating the Book." });
-    else res.send(data);
+    if (err) {
+      res.status(500).send({ message: err.message || "Some error occurred while creating the Book." });
+    } else {
+      res.status(201).send(data);
+    }
   });
 };
 
@@ -76,8 +82,13 @@ exports.getAllBooks = (req, res) => {
   }
 
   Book.getAllBooks(params, (err, data) => {
-    if (err) res.status(500).send({ message: err.message || "Some error occurred while retrieving books." });
-    else res.send(data);
+    if (err) {
+      res.status(500).send({ message: err.message || "Some error occurred while retrieving books." });
+    } else if (data.error === "not_found") {
+      res.status(404).send({ message: "No books found." });
+    } else {
+      res.status(200).send(data);
+    }
   });
 };
 
@@ -86,20 +97,30 @@ exports.getBookById = (req, res) => {
   const id = req.params.id;
 
   if (!id) {
-    res.status(400).send({ message: "ID cannot be empty!" });
+    res.status(400).send({ message: "Content cannot be empty!" });
     return;
   }
 
   Book.getBookById(id, (err, data) => {
-    if (err) res.status(500).send({ message: err.message || `Error retrieving Book with id=${id}.` });
-    else res.send(data);
+    if (err) {
+      res.status(500).send({ message: err.message || `Error retrieving Book with id=${id}` });
+    } else if (data.error === "not_found") {
+      res.status(404).send({ message: `Book with id=${id} not found.` });
+    } else {
+      res.status(200).send(data);
+    }
   });
 };
 
 // Update a Book by the id in the request
 exports.updateBookById = (req, res) => {
   // Validate Request
-  if (!req.body) {
+  if (Array.isArray(req.body)) {
+    res.status(400).send({ message: "Invalid request! Cannot update from an array!" });
+    return;
+  }
+
+  if (!req.body || Object.keys(req.body).length === 0) {
     res.status(400).send({ message: "Content cannot be empty!" });
     return;
   }
@@ -107,13 +128,33 @@ exports.updateBookById = (req, res) => {
   const id = req.params.id;
 
   if (!id) {
-    res.status(400).send({ message: "ID cannot be empty!" });
+    res.status(400).send({ message: "Content cannot be empty!" });
     return;
   }
 
-  Book.updateBookById(id, new Book(req.body), (err, data) => {
-    if (err) res.status(500).send({ message: err.message || `Error updating Book with id=${id}.` });
-    else res.send(data);
+  const book = new Book({
+    title: req.body.title,
+    author_id: req.body.author_id,
+    publish_date: req.body.publish_date,
+  });
+
+  if (!book.title || !book.author_id || !book.publish_date) {
+    res.status(400).send({ message: "Title, Author ID, and Publish Date are required!" });
+    return;
+  }
+
+  Book.updateBookById(id, book, (err, data) => {
+    if (err) {
+      if (err.kind === "not_found") {
+        res.status(404).send({ message: `Book with id=${id} not found.` });
+      } else {
+        res.status(500).send({ message: "Error updating Book with id " + id });
+      }
+    } else if (data.error == "not_found") {
+      res.status(404).send({ message: `Book with id=${id} not found.` });
+    } else {
+      res.status(201).send({ message: `Book with id=${id} was updated successfully!`, book: data.book });
+    }
   });
 };
 
@@ -122,13 +163,22 @@ exports.deleteBookById = (req, res) => {
   const id = req.params.id;
 
   if (!id) {
-    res.status(400).send({ message: "ID cannot be empty!" });
+    res.status(400).send({ message: "Content cannot be empty" });
     return;
   }
 
   Book.deleteBookById(id, (err, data) => {
-    if (err) res.status(500).send({ message: err.message || `Error deleting Book with id=${id}.` });
-    else res.send(data);
+    if (err) {
+      if (err.kind === "not_found") {
+        res.status(404).send({ message: `Book with id=${id} not found.` });
+      } else {
+        res.status(500).send({ message: `Book with id=${id} could not be deleted.` });
+      }
+    } else if (data.error == "not_found") {
+      res.status(404).send({ message: `Book with id=${id} not found.` });
+    } else {
+      res.status(200).send({ message: `Book with id=${id} was deleted successfully!` });
+    }
   });
 };
 

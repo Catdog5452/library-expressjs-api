@@ -93,9 +93,9 @@ exports.getAuthorById = (req, res) => {
 
   Author.getAuthorById(id, (err, data) => {
     if (err) {
-      res.status(500).send({ message: "Error retrieving Author with id " + req.params.id });
+      res.status(500).send({ message: `Error retrieving Author with id=${id}` });
     } else if (data.error === "not_found") {
-      res.status(404).send({ message: `Author with ID ${id} not found.` });
+      res.status(404).send({ message: `Author with id=${id} not found.` });
     } else {
       res.status(200).send(data);
     }
